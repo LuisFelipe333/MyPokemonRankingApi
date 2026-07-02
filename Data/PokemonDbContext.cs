@@ -11,5 +11,17 @@ namespace MyPokemonRankingApi.Data
         }
 
         public DbSet<Pokemon> Pokemons { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Configuramos un índice único para la columna Position
+            modelBuilder.Entity<Pokemon>()
+                .HasIndex(p => p.Position)
+                .IsUnique();
+        }
     }
+
+
 }

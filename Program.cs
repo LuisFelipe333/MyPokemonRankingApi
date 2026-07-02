@@ -1,6 +1,8 @@
 
 using Microsoft.EntityFrameworkCore;
 using MyPokemonRankingApi.Data;
+using MyPokemonRankingApi.Interfaces;
+using MyPokemonRankingApi.Repositories;
 
 namespace MyPokemonRankingApi
 {
@@ -16,6 +18,7 @@ namespace MyPokemonRankingApi
             builder.Services.AddDbContext<PokemonDbContext>(options => //Se crea el dbcontext y se le pasa la cadena de conexión que está en appsettings.json
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<IPokemonRepository, PokemonRepository>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
