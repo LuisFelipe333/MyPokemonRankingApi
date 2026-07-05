@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MyPokemonRankingApi.Data;
 using MyPokemonRankingApi.Interfaces;
 using MyPokemonRankingApi.Repositories;
+using MyPokemonRankingApi.Services;
 
 namespace MyPokemonRankingApi
 {
@@ -20,6 +21,9 @@ namespace MyPokemonRankingApi
                     builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<IPokemonRepository, PokemonRepository>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+            builder.Services.AddHttpClient<IPokemonService, PokemonService>(); //Registramos el servicio de PokemonService para que pueda ser inyectado en los controladores y otros servicios. 
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
