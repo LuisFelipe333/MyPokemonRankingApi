@@ -24,6 +24,22 @@ namespace MyPokemonRankingApi.Services
 
         public async Task<Pokemon> AddToRankingAsync(CreatePokemonDto createDto)
         {
+
+            if (createDto.Position < 1)
+            {
+                throw new ArgumentException("La posición en el ranking debe ser mayor o igual a 1."); //Verificamos que envien una posicion valida
+            }
+
+            var AllPokemon = await _repository.GetAllAsync();
+
+            bool alreadyExists = AllPokemon.Any(p => p.PokemonApiId == createDto.PokemonApiId); //Verificamos que el Pokémon no esté ya en el ranking
+
+            if (alreadyExists)
+            {
+                throw new InvalidOperationException("Este Pokémon ya se encuentra registrado en tu ranking.");
+            }
+
+
             // Consumir la PokéAPI usando el createDto.PokemonApiId
             var url = $"https://pokeapi.co/api/v2/pokemon/{createDto.PokemonApiId}";
 
@@ -34,23 +50,23 @@ namespace MyPokemonRankingApi.Services
                 throw new Exception("No se encontró el Pokémon en la PokéAPI externa.");
             }
 
-            var tipos = pokeData.types
+            var types = pokeData.types
                 .OrderBy(t => t.slot)
                 .Select(t => t.type.name)
                 .ToList();
 
-            string primaryType = tipos.FirstOrDefault() ?? "Unknown";
-            string? secondaryType = tipos.Count > 1 ? tipos[1] : null;
+            string primaryType = types.FirstOrDefault() ?? "Unknown";
+            string? secondaryType = types.Count > 1 ? types[1] : null;
 
             // 2. TODO: Aplicar la regla de negocio para recorrer las posiciones
             
-            var pokemonAfectados = await _repository.GetAllAsync(); //Traer todos los pokemones para poder recorrerlos
+            var affectedPokemon = await _repository.GetAllAsync(); //Traer todos los pokemones para poder recorrerlos
 
-            var paraRecorrer = pokemonAfectados
+            var forMove = affectedPokemon
                 .Where(p => p.Position >= createDto.Position)
                 .OrderByDescending(p => p.Position); //Ordenamos de mayor a menor para poder recorrerlos y sumarle 1 a su posición
 
-            foreach (var poke in paraRecorrer) //Recorremos los pokemones que tienen una posición mayor o igual a la que queremos insertar
+            foreach (var poke in forMove) //Recorremos los pokemones que tienen una posición mayor o igual a la que queremos insertar
             {
                 poke.Position += 1;
                 _repository.Update(poke);
@@ -58,7 +74,7 @@ namespace MyPokemonRankingApi.Services
 
             // 3. TODO: Guardar en la base de datos a través del repositorio
 
-            var nuevoPokemon = new Pokemon
+            var newPokemon = new Pokemon
             {
                 PokemonApiId = createDto.PokemonApiId,
                 Position = createDto.Position,
@@ -68,10 +84,10 @@ namespace MyPokemonRankingApi.Services
             };
 
             // 4. Guardamos el nuevo Pokémon y confirmamos todos los cambios en la BD
-            await _repository.AddAsync(nuevoPokemon);
+            await _repository.AddAsync(newPokemon);
             await _repository.SaveChangesAsync();
 
-            return nuevoPokemon;
+            return newPokemon;
         }
 
     }
