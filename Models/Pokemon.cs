@@ -14,6 +14,6 @@
 
         public int Position { get; set; }
 
-        public int Generation { get; set; }
+        public int Generation { get; set;  }
     }
 }

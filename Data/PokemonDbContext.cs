@@ -16,10 +16,7 @@ namespace MyPokemonRankingApi.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuramos un índice único para la columna Position
-            modelBuilder.Entity<Pokemon>()
-                .HasIndex(p => p.Position)
-                .IsUnique();
+            //Se quita el indice único en la propiedad Position para permitir que se puedan tener posiciones duplicadas temporalmente durante las operaciones de actualización de ranking.
         }
     }
 

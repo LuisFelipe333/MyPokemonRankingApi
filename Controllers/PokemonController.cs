@@ -60,5 +60,27 @@ namespace MyPokemonRankingApi.Controllers
                 return BadRequest(new { message = ex.Message }); // HTTP 400
             }
         }
+
+        [HttpPut("{id}/position")]
+        public async Task<IActionResult> UpdatePosition(int id, [FromBody] int newPosition)
+        {
+            try
+            {
+                var updatedPokemon = await _pokemonService.UpdatePositionAsync(id, newPosition);
+                return Ok(updatedPokemon);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Error interno: {ex.Message}" });
+            }
+        }
     }
 }

@@ -61,7 +61,7 @@ namespace MyPokemonRankingApi.Services
 
             if (createDto.Position > totalPlusOne) //Verificamos que la posición no sea mayor a la cantidad de Pokémon + 1
             {
-                throw new ArgumentException($"Posición inválida. El ranking actual es de {allPokemon.Count()} Pokémon, por lo que la posición máxima a elegir es {allPokemon.Count() + 1}.");
+                throw new ArgumentException($"Posición inválida. El ranking actual tiene {totalPlusOne} Pokémon.");
             }
 
 
@@ -83,11 +83,11 @@ namespace MyPokemonRankingApi.Services
             string primaryType = types.FirstOrDefault() ?? "Unknown";
             string? secondaryType = types.Count > 1 ? types[1] : null;
 
-            // 2. TODO: Aplicar la regla de negocio para recorrer las posiciones
+            // 2: Aplicar la regla de negocio para recorrer las posiciones
             
             PushDown(allPokemon, createDto.Position); //Se cambia a un metodo aparte para reusarlo
 
-            // 3. TODO: Guardar en la base de datos a través del repositorio
+            // 3: Guardar en la base de datos a través del repositorio
 
             var newPokemon = new Pokemon
             {
@@ -99,7 +99,7 @@ namespace MyPokemonRankingApi.Services
                 Generation = GetGenerationByPokemonId(createDto.PokemonApiId) //Obtenemos la generación según el ID del Pokémon
             };
 
-            // 4. Guardamos el nuevo Pokémon y confirmamos todos los cambios en la BD
+            // 4: Guardamos el nuevo Pokémon y confirmamos todos los cambios en la BD
             await _repository.AddAsync(newPokemon);
             await _repository.SaveChangesAsync();
 
@@ -121,6 +121,61 @@ namespace MyPokemonRankingApi.Services
             PushUp(allPokemon, pokemonToDelete.Position);
 
             await _repository.SaveChangesAsync();
+        }
+
+
+        public async Task<Pokemon> UpdatePositionAsync(int id, int newPosition)
+        {
+            if (newPosition < 1)
+            {
+                throw new ArgumentException("La posición debe ser mayor o igual a 1.");
+            }
+
+            var pokemonToMove = await _repository.GetByIdAsync(id);
+            if (pokemonToMove == null)
+            {
+                throw new KeyNotFoundException("El Pokémon con el ID especificado no existe en el ranking.");
+            }
+
+            
+            var allPokemon = await _repository.GetAllAsync();
+            int totalPlusOne = allPokemon.Count() + 1;
+
+            if (newPosition > totalPlusOne)
+            {
+                throw new ArgumentException($"Posición inválida. El ranking actual tiene {totalPlusOne} Pokémon.");
+            }
+
+            // Si la posición es la misma retornamos
+            int oldPosition = pokemonToMove.Position;
+            if (oldPosition == newPosition) return pokemonToMove;
+
+            if (newPosition < oldPosition)
+            {
+                // Si el pokemon sube en el ranking, movemos todos los que están entre la nueva posición y la antigua posición hacia abajo
+               
+                var affectedPokemon = allPokemon
+                    .Where(p => p.Position >= newPosition && p.Position < oldPosition);
+
+                PushDown(affectedPokemon, newPosition);
+            }
+            else
+            {
+                // El Pokémon BAJA en el ranking, movemos todos los que están entre la antigua posición y la nueva posición hacia arriba
+                var affectedPokemon = allPokemon
+                    .Where(p => p.Position > oldPosition && p.Position <= newPosition);
+
+                
+                PushUp(affectedPokemon, oldPosition);
+            }
+
+            pokemonToMove.Position = newPosition;
+            _repository.Update(pokemonToMove);
+
+            
+            await _repository.SaveChangesAsync();
+
+            return pokemonToMove;
         }
 
 
