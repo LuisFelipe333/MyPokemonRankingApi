@@ -61,7 +61,7 @@ namespace MyPokemonRankingApi.Services
 
             if (createDto.Position > totalPlusOne) //Verificamos que la posición no sea mayor a la cantidad de Pokémon + 1
             {
-                throw new ArgumentException($"Posición inválida. El ranking actual es de {allPokemon.Count()} Pokémon, por lo que la posición máxima a elegir es {allPokemon}.");
+                throw new ArgumentException($"Posición inválida. El ranking actual es de {allPokemon.Count()} Pokémon, por lo que la posición máxima a elegir es {allPokemon.Count() + 1}.");
             }
 
 
@@ -104,6 +104,23 @@ namespace MyPokemonRankingApi.Services
             await _repository.SaveChangesAsync();
 
             return newPokemon;
+        }
+
+        public async Task DeleteFromRankingAsync(int id)
+        {
+            var pokemonToDelete = await _repository.GetByIdAsync(id);
+            if (pokemonToDelete == null)
+            {
+                throw new KeyNotFoundException("El Pokémon con el ID especificado no existe en el ranking.");
+            }
+
+            var allPokemon = await _repository.GetAllAsync();
+
+            _repository.Delete(pokemonToDelete);
+
+            PushUp(allPokemon, pokemonToDelete.Position);
+
+            await _repository.SaveChangesAsync();
         }
 
 

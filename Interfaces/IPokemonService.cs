@@ -7,5 +7,6 @@ namespace MyPokemonRankingApi.Interfaces
     {
         Task<Pokemon> AddToRankingAsync(CreatePokemonDto createDto);
         Task<IEnumerable<Pokemon>> GetRankingAsync(int? generation = null, string? type = null);
+        Task DeleteFromRankingAsync(int id);
     }
 }

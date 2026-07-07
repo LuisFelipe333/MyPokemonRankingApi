@@ -42,5 +42,23 @@ namespace MyPokemonRankingApi.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteFromRanking(int id)
+        {
+            try
+            {
+                await _pokemonService.DeleteFromRankingAsync(id);
+                return NoContent(); 
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message }); // HTTP 404
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message }); // HTTP 400
+            }
+        }
     }
 }
