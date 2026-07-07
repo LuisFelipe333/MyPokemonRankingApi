@@ -13,5 +13,7 @@
         public string? SecondaryType { get; set; }
 
         public int Position { get; set; }
+
+        public int Generation { get; set; }
     }
 }

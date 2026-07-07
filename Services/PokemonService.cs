@@ -17,9 +17,26 @@ namespace MyPokemonRankingApi.Services
             _httpClient = httpClient;
         }
 
-        public async Task<IEnumerable<Pokemon>> GetRankingAsync()
+        public async Task<IEnumerable<Pokemon>> GetRankingAsync(int? generation = null, string? type = null)
         {
-            return await _repository.GetAllAsync();
+            var currentRanking = await _repository.GetAllAsync();
+
+            if (generation.HasValue)//Filtro por generacion
+            {
+                currentRanking = currentRanking.Where(p => p.Generation == generation.Value);
+            }
+
+            if (!string.IsNullOrEmpty(type)) //Filtro por tipo
+            {
+                var typeLower = type.ToLower();
+
+                currentRanking = currentRanking.Where(p =>
+                    p.PrimaryType.ToLower() == typeLower ||
+                    (p.SecondaryType != null && p.SecondaryType.ToLower() == typeLower)
+                );
+            }
+
+            return currentRanking.OrderBy(p => p.Position).ToList();
         }
 
         public async Task<Pokemon> AddToRankingAsync(CreatePokemonDto createDto)
@@ -30,13 +47,21 @@ namespace MyPokemonRankingApi.Services
                 throw new ArgumentException("La posición en el ranking debe ser mayor o igual a 1."); //Verificamos que envien una posicion valida
             }
 
-            var AllPokemon = await _repository.GetAllAsync();
+            var allPokemon = await _repository.GetAllAsync();
 
-            bool alreadyExists = AllPokemon.Any(p => p.PokemonApiId == createDto.PokemonApiId); //Verificamos que el Pokémon no esté ya en el ranking
+            bool alreadyExists = allPokemon.Any(p => p.PokemonApiId == createDto.PokemonApiId); //Verificamos que el Pokémon no esté ya en el ranking
 
             if (alreadyExists)
             {
                 throw new InvalidOperationException("Este Pokémon ya se encuentra registrado en tu ranking.");
+            }
+
+           
+            int totalPlusOne = allPokemon.Count() + 1;
+
+            if (createDto.Position > totalPlusOne) //Verificamos que la posición no sea mayor a la cantidad de Pokémon + 1
+            {
+                throw new ArgumentException($"Posición inválida. El ranking actual es de {allPokemon.Count()} Pokémon, por lo que la posición máxima a elegir es {allPokemon}.");
             }
 
 
@@ -60,17 +85,7 @@ namespace MyPokemonRankingApi.Services
 
             // 2. TODO: Aplicar la regla de negocio para recorrer las posiciones
             
-            var affectedPokemon = await _repository.GetAllAsync(); //Traer todos los pokemones para poder recorrerlos
-
-            var forMove = affectedPokemon
-                .Where(p => p.Position >= createDto.Position)
-                .OrderByDescending(p => p.Position); //Ordenamos de mayor a menor para poder recorrerlos y sumarle 1 a su posición
-
-            foreach (var poke in forMove) //Recorremos los pokemones que tienen una posición mayor o igual a la que queremos insertar
-            {
-                poke.Position += 1;
-                _repository.Update(poke);
-            }
+            PushDown(allPokemon, createDto.Position); //Se cambia a un metodo aparte para reusarlo
 
             // 3. TODO: Guardar en la base de datos a través del repositorio
 
@@ -80,7 +95,8 @@ namespace MyPokemonRankingApi.Services
                 Position = createDto.Position,
                 Name = char.ToUpper(pokeData.name[0]) + pokeData.name.Substring(1), // Capitalizamos la primera letra del nombre
                 PrimaryType = primaryType,
-                SecondaryType = secondaryType
+                SecondaryType = secondaryType,
+                Generation = GetGenerationByPokemonId(createDto.PokemonApiId) //Obtenemos la generación según el ID del Pokémon
             };
 
             // 4. Guardamos el nuevo Pokémon y confirmamos todos los cambios en la BD
@@ -89,6 +105,55 @@ namespace MyPokemonRankingApi.Services
 
             return newPokemon;
         }
+
+
+
+        private void PushDown(IEnumerable<Pokemon> list, int startPosition)
+        {
+            var affected = list
+                .Where(p => p.Position >= startPosition)
+                .OrderByDescending(p => p.Position); // De mayor a menor para no chocar indices unicos
+
+            foreach (var poke in affected)
+            {
+                poke.Position += 1;
+                _repository.Update(poke);
+            }
+        }
+
+        private void PushUp(IEnumerable<Pokemon> list, int startPosition)
+        {
+            var affected = list
+                .Where(p => p.Position > startPosition)
+                .OrderBy(p => p.Position); // De menor a mayor para ir subiendo escalonadamente
+
+            foreach (var poke in affected)
+            {
+                poke.Position -= 1;
+                _repository.Update(poke);
+            }
+        }
+
+
+        private int GetGenerationByPokemonId(int pokemonApiId) //Nos devuelve la generación del Pokémon según su ID en la PokéAPI
+        {
+            // Evaluamos el ID según los rangos oficiales de la PokéAPI
+            if (pokemonApiId >= 1 && pokemonApiId <= 151) return 1;
+            if (pokemonApiId >= 152 && pokemonApiId <= 251) return 2;
+            if (pokemonApiId >= 252 && pokemonApiId <= 386) return 3;
+            if (pokemonApiId >= 387 && pokemonApiId <= 493) return 4;
+            if (pokemonApiId >= 494 && pokemonApiId <= 649) return 5;
+            if (pokemonApiId >= 650 && pokemonApiId <= 721) return 6;
+            if (pokemonApiId >= 722 && pokemonApiId <= 809) return 7;
+            if (pokemonApiId >= 810 && pokemonApiId <= 905) return 8;
+            if (pokemonApiId >= 906 && pokemonApiId <= 1025) return 9;
+
+            // Por defecto lo dejamos en 0 o 9
+            return 9;
+        }
+
+
+
 
     }
 

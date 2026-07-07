@@ -16,10 +16,17 @@ namespace MyPokemonRankingApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetRanking()
+        public async Task<IActionResult> GetRanking([FromQuery] int? generation = null, [FromQuery] string? type = null)
         {
-            var ranking = await _pokemonService.GetRankingAsync();
-            return Ok(ranking);
+            try
+            {
+                var ranking = await _pokemonService.GetRankingAsync(generation, type);
+                return Ok(ranking);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost]
