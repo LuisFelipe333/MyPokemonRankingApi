@@ -12,6 +12,17 @@ namespace MyPokemonRankingApi
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost:4200"; //Se obtiene el url del front y se coloca el local host 4200 por defecto
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAngular", policy =>
+                {
+                    policy.WithOrigins(frontendUrl) 
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
 
             // Add services to the container.
 
@@ -37,6 +48,8 @@ namespace MyPokemonRankingApi
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors("AllowAngular"); //Usar regla para permitir Angular
 
             app.UseAuthorization();
 
