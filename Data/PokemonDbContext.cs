@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MyPokemonRankingApi.Models;
 
 namespace MyPokemonRankingApi.Data
 {
-    public class PokemonDbContext : DbContext
+    public class PokemonDbContext : IdentityDbContext
     {
         public PokemonDbContext(DbContextOptions<PokemonDbContext> options)
             : base(options)
