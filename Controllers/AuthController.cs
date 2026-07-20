@@ -30,11 +30,11 @@ namespace MyPokemonRankingApi.Controllers
 
             var userExists = await _userManager.FindByNameAsync(registerDto.Username);
             if (userExists != null)
-                return BadRequest(new { message = "El nombre de usuario ya está registrado." });
+                return BadRequest(new { message = "The username is already registered." });
 
             var emailExists = await _userManager.FindByEmailAsync(registerDto.Email);
             if (emailExists != null)
-                return BadRequest(new { message = "El correo electrónico ya está en uso." });
+                return BadRequest(new { message = "The email address is already in use." });
 
             var user = new IdentityUser
             {
@@ -47,7 +47,7 @@ namespace MyPokemonRankingApi.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            return Ok(new { message = "Usuario registrado exitosamente." });
+            return Ok(new { message = "User successfully registered." });
         }
 
         [HttpPost("login")]
@@ -58,7 +58,7 @@ namespace MyPokemonRankingApi.Controllers
 
             var user = await _userManager.FindByNameAsync(loginDto.Username);
             if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
-                return Unauthorized(new { message = "Credenciales inválidas." });
+                return Unauthorized(new { message = "Invalid credentials." });
 
             // Generar el Token JWT utilizando la misma firma del Program.cs
             var jwtSecret = _configuration["Jwt:Secret"];
@@ -83,7 +83,7 @@ namespace MyPokemonRankingApi.Controllers
             {
                 token = tokenString,
                 username = user.UserName,
-                message = "Inicio de sesión exitoso."
+                message = "Login successful."
             });
         }
     }

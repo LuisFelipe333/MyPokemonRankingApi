@@ -4,10 +4,10 @@ namespace MyPokemonRankingApi.DTOs
 {
     public class LoginDto
     {
-        [Required(ErrorMessage = "El nombre de usuario es obligatorio.")]
+        [Required(ErrorMessage = "The username is required.")]
         public string Username { get; set; }
 
-        [Required(ErrorMessage = "La contraseña es obligatoria.")]
+        [Required(ErrorMessage = "The password is required.")]
         public string Password { get; set; }
     }
 }

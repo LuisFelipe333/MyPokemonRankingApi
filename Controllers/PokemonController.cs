@@ -79,7 +79,7 @@ namespace MyPokemonRankingApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = $"Error interno: {ex.Message}" });
+                return StatusCode(500, new { message = $"Internal error: {ex.Message}" });
             }
         }
     }
