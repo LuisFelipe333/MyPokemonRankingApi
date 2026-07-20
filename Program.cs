@@ -48,7 +48,7 @@ namespace MyPokemonRankingApi
             .AddEntityFrameworkStores<PokemonDbContext>() // Conectado a tu contexto general
             .AddDefaultTokenProviders();
 
-            var jwtSecret = "ClaveMuySecretaYMuyLargaDeMasDe32CaracteresParaElRankingPokemon2026";
+            var jwtSecret = builder.Configuration["Jwt:Secret"];
             var key = Encoding.ASCII.GetBytes(jwtSecret);
 
             builder.Services.AddAuthentication(options => 
