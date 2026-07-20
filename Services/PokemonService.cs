@@ -17,29 +17,29 @@ namespace MyPokemonRankingApi.Services
             _httpClient = httpClient;
         }
 
-        public async Task<IEnumerable<Pokemon>> GetRankingAsync(int? generation = null, string? type = null)
+        public async Task<IEnumerable<Pokemon>> GetRankingAsync(string userId,int? generation = null, string? type = null)
         {
-            var currentRanking = await _repository.GetAllAsync();
+            var userRanking = await _repository.GetByUserIdAsync(userId);
 
             if (generation.HasValue)//Filtro por generacion
             {
-                currentRanking = currentRanking.Where(p => p.Generation == generation.Value);
+                userRanking = userRanking.Where(p => p.Generation == generation.Value);
             }
 
             if (!string.IsNullOrEmpty(type)) //Filtro por tipo
             {
                 var typeLower = type.ToLower();
 
-                currentRanking = currentRanking.Where(p =>
+                userRanking = userRanking.Where(p =>
                     p.PrimaryType.ToLower() == typeLower ||
                     (p.SecondaryType != null && p.SecondaryType.ToLower() == typeLower)
                 );
             }
 
-            return currentRanking.OrderBy(p => p.Position).ToList();
+            return userRanking.OrderBy(p => p.Position).ToList();
         }
 
-        public async Task<Pokemon> AddToRankingAsync(CreatePokemonDto createDto)
+        public async Task<Pokemon> AddToRankingAsync(string userId, CreatePokemonDto createDto)
         {
 
             if (createDto.Position < 1)
@@ -47,9 +47,9 @@ namespace MyPokemonRankingApi.Services
                 throw new ArgumentException("La posición en el ranking debe ser mayor o igual a 1."); //Verificamos que envien una posicion valida
             }
 
-            var allPokemon = await _repository.GetAllAsync();
+            var userRanking = await _repository.GetByUserIdAsync(userId); //Obtenemos el ranking del usuario
+            bool alreadyExists = userRanking.Any(p => p.PokemonApiId == createDto.PokemonApiId); //Verificamos si el Pokémon ya existe en el ranking del usuario
 
-            bool alreadyExists = allPokemon.Any(p => p.PokemonApiId == createDto.PokemonApiId); //Verificamos que el Pokémon no esté ya en el ranking
 
             if (alreadyExists)
             {
@@ -57,7 +57,7 @@ namespace MyPokemonRankingApi.Services
             }
 
            
-            int totalPlusOne = allPokemon.Count() + 1;
+            int totalPlusOne = userRanking.Count() + 1;
 
             if (createDto.Position > totalPlusOne) //Verificamos que la posición no sea mayor a la cantidad de Pokémon + 1
             {
@@ -85,12 +85,13 @@ namespace MyPokemonRankingApi.Services
 
             // 2: Aplicar la regla de negocio para recorrer las posiciones
             
-            PushDown(allPokemon, createDto.Position); //Se cambia a un metodo aparte para reusarlo
+            PushDown(userRanking, createDto.Position); //Se cambia a un metodo aparte para reusarlo
 
             // 3: Guardar en la base de datos a través del repositorio
 
             var newPokemon = new Pokemon
             {
+                UserId = userId, // Asociamos el Pokémon al usuario que lo está agregando
                 PokemonApiId = createDto.PokemonApiId,
                 Position = createDto.Position,
                 Name = char.ToUpper(pokeData.name[0]) + pokeData.name.Substring(1), // Capitalizamos la primera letra del nombre
@@ -106,40 +107,41 @@ namespace MyPokemonRankingApi.Services
             return newPokemon;
         }
 
-        public async Task DeleteFromRankingAsync(int id)
+        public async Task DeleteFromRankingAsync(string userId, int id)
         {
-            var pokemonToDelete = await _repository.GetByIdAsync(id);
+            var pokemonToDelete = await _repository.GetByIdAndUserIdAsync(id, userId);
+            
             if (pokemonToDelete == null)
             {
                 throw new KeyNotFoundException("El Pokémon con el ID especificado no existe en el ranking.");
             }
 
-            var allPokemon = await _repository.GetAllAsync();
+            var userRanking = await _repository.GetAllAsync();
 
             _repository.Delete(pokemonToDelete);
 
-            PushUp(allPokemon, pokemonToDelete.Position);
+            PushUp(userRanking, pokemonToDelete.Position);
 
             await _repository.SaveChangesAsync();
         }
 
 
-        public async Task<Pokemon> UpdatePositionAsync(int id, int newPosition)
+        public async Task<Pokemon> UpdatePositionAsync(string userId, int id, int newPosition)
         {
             if (newPosition < 1)
             {
                 throw new ArgumentException("La posición debe ser mayor o igual a 1.");
             }
 
-            var pokemonToMove = await _repository.GetByIdAsync(id);
+            var pokemonToMove = await _repository.GetByIdAndUserIdAsync(id, userId);
             if (pokemonToMove == null)
             {
                 throw new KeyNotFoundException("El Pokémon con el ID especificado no existe en el ranking.");
             }
 
-            
-            var allPokemon = await _repository.GetAllAsync();
-            int totalPlusOne = allPokemon.Count() + 1;
+
+            var userRanking = await _repository.GetByUserIdAsync(userId);
+            int totalPlusOne = userRanking.Count() + 1;
 
             if (newPosition > totalPlusOne)
             {
@@ -154,7 +156,7 @@ namespace MyPokemonRankingApi.Services
             {
                 // Si el pokemon sube en el ranking, movemos todos los que están entre la nueva posición y la antigua posición hacia abajo
                
-                var affectedPokemon = allPokemon
+                var affectedPokemon = userRanking
                     .Where(p => p.Position >= newPosition && p.Position < oldPosition);
 
                 PushDown(affectedPokemon, newPosition);
@@ -162,7 +164,7 @@ namespace MyPokemonRankingApi.Services
             else
             {
                 // El Pokémon BAJA en el ranking, movemos todos los que están entre la antigua posición y la nueva posición hacia arriba
-                var affectedPokemon = allPokemon
+                var affectedPokemon = userRanking
                     .Where(p => p.Position > oldPosition && p.Position <= newPosition);
 
                 

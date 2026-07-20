@@ -14,6 +14,18 @@ namespace MyPokemonRankingApi.Repositories
         {
             _context = context;
         }
+        public async Task<IEnumerable<Pokemon>> GetByUserIdAsync(string userId)
+        {
+            return await _context.Pokemons
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+        }
+
+        public async Task<Pokemon?> GetByIdAndUserIdAsync(int id, string userId)
+        {
+            return await _context.Pokemons
+                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+        }
 
         public async Task<IEnumerable<Pokemon>> GetAllAsync()
         {

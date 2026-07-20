@@ -1,4 +1,6 @@
-﻿namespace MyPokemonRankingApi.Models
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace MyPokemonRankingApi.Models
 {
     public class Pokemon
     {
@@ -15,5 +17,7 @@
         public int Position { get; set; }
 
         public int Generation { get; set;  }
+        public string UserId { get; set; }
+        public IdentityUser User { get; set; }//Propiedad en caso de usar EF
     }
 }

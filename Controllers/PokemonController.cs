@@ -1,14 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MyPokemonRankingApi.Interfaces;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyPokemonRankingApi.DTOs;
+using MyPokemonRankingApi.Interfaces;
+using System.Security.Claims;
 
 namespace MyPokemonRankingApi.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] 
+    [Route("api/[controller]")]
+    [Authorize] // Solicita autenticación para todas las acciones del controlador, exige JWT válido.
     public class PokemonController : ControllerBase
     {
         private readonly IPokemonService _pokemonService;
+
+        private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier)!; // Obtiene el ID del usuario autenticado desde el token JWT.
 
         public PokemonController(IPokemonService pokemonService)
         {
@@ -20,7 +25,8 @@ namespace MyPokemonRankingApi.Controllers
         {
             try
             {
-                var ranking = await _pokemonService.GetRankingAsync(generation, type);
+                var userId = GetUserId();
+                var ranking = await _pokemonService.GetRankingAsync(userId, generation, type);
                 return Ok(ranking);
             }
             catch (Exception ex)
@@ -34,7 +40,8 @@ namespace MyPokemonRankingApi.Controllers
         {
             try
             {
-                var nuevoPokemon = await _pokemonService.AddToRankingAsync(createDto);
+                var userId = GetUserId();
+                var nuevoPokemon = await _pokemonService.AddToRankingAsync(userId, createDto);
                 return CreatedAtAction(nameof(GetRanking), null, nuevoPokemon);
             }
             catch (Exception ex)
@@ -48,7 +55,8 @@ namespace MyPokemonRankingApi.Controllers
         {
             try
             {
-                await _pokemonService.DeleteFromRankingAsync(id);
+                var userId = GetUserId();
+                await _pokemonService.DeleteFromRankingAsync(userId, id);
                 return NoContent(); 
             }
             catch (KeyNotFoundException ex)
@@ -66,7 +74,8 @@ namespace MyPokemonRankingApi.Controllers
         {
             try
             {
-                var updatedPokemon = await _pokemonService.UpdatePositionAsync(id, newPosition);
+                var userId = GetUserId();
+                var updatedPokemon = await _pokemonService.UpdatePositionAsync(userId, id, newPosition);
                 return Ok(updatedPokemon);
             }
             catch (KeyNotFoundException ex)
