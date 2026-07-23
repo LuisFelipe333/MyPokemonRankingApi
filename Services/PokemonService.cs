@@ -44,7 +44,7 @@ namespace MyPokemonRankingApi.Services
 
             if (createDto.Position < 1)
             {
-                throw new ArgumentException("La posición en el ranking debe ser mayor o igual a 1."); //Verificamos que envien una posicion valida
+                throw new ArgumentException("The ranking position must be greater than or equal to 1."); //Verificamos que envien una posicion valida
             }
 
             var userRanking = await _repository.GetByUserIdAsync(userId); //Obtenemos el ranking del usuario
@@ -53,7 +53,7 @@ namespace MyPokemonRankingApi.Services
 
             if (alreadyExists)
             {
-                throw new InvalidOperationException("Este Pokémon ya se encuentra registrado en tu ranking.");
+                throw new InvalidOperationException("This Pokémon is already registered in your ranking.");
             }
 
            
@@ -61,7 +61,7 @@ namespace MyPokemonRankingApi.Services
 
             if (createDto.Position > totalPlusOne) //Verificamos que la posición no sea mayor a la cantidad de Pokémon + 1
             {
-                throw new ArgumentException($"Posición inválida. El ranking actual tiene {totalPlusOne} Pokémon.");
+                throw new ArgumentException($"Invalid position. The current ranking has {totalPlusOne} Pokémon.");
             }
 
 
@@ -72,7 +72,7 @@ namespace MyPokemonRankingApi.Services
 
             if (pokeData == null)
             {
-                throw new Exception("No se encontró el Pokémon en la PokéAPI externa.");
+                throw new Exception("The Pokémon was not found in the external PokéAPI.");
             }
 
             var types = pokeData.types
@@ -113,7 +113,7 @@ namespace MyPokemonRankingApi.Services
             
             if (pokemonToDelete == null)
             {
-                throw new KeyNotFoundException("El Pokémon con el ID especificado no existe en el ranking.");
+                throw new KeyNotFoundException("The Pokémon with the specified ID doesn't exist in the ranking.");
             }
 
             var userRanking = await _repository.GetAllAsync();
@@ -130,13 +130,13 @@ namespace MyPokemonRankingApi.Services
         {
             if (newPosition < 1)
             {
-                throw new ArgumentException("La posición debe ser mayor o igual a 1.");
+                throw new ArgumentException("The ranking position must be greater than or equal to 1.");
             }
 
             var pokemonToMove = await _repository.GetByIdAndUserIdAsync(id, userId);
             if (pokemonToMove == null)
             {
-                throw new KeyNotFoundException("El Pokémon con el ID especificado no existe en el ranking.");
+                throw new KeyNotFoundException("The Pokémon with the specified ID doesn't exist in the ranking.");
             }
 
 
@@ -145,7 +145,7 @@ namespace MyPokemonRankingApi.Services
 
             if (newPosition > totalPlusOne)
             {
-                throw new ArgumentException($"Posición inválida. El ranking actual tiene {totalPlusOne} Pokémon.");
+                throw new ArgumentException($"Invalid position. The current ranking has {totalPlusOne} Pokémon.");
             }
 
             // Si la posición es la misma retornamos
