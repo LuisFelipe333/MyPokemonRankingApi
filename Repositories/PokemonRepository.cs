@@ -61,5 +61,13 @@ namespace MyPokemonRankingApi.Repositories
         {
             return await _context.SaveChangesAsync() > 0;
         }
+
+        public async Task<IEnumerable<Pokemon>> GetByUsernameAsync(string username)
+        {
+            return await _context.Pokemons
+                .Include(p => p.User)
+                .Where(p => p.User.UserName!.ToLower() == username.ToLower())
+                .ToListAsync();
+        }
     }
 }

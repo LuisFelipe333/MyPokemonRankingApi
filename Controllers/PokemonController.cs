@@ -91,5 +91,29 @@ namespace MyPokemonRankingApi.Controllers
                 return StatusCode(500, new { message = $"Internal error: {ex.Message}" });
             }
         }
+
+        [HttpGet("share/{username}")]
+        [AllowAnonymous] // Permite el acceso sin token JWT
+        public async Task<IActionResult> GetPublicRanking(string username)
+        {
+            try
+            {
+                var ranking = await _pokemonService.GetPublicRankingAsync(username);
+                return Ok(ranking);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+            }
+        }
+
     }
 }

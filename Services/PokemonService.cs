@@ -17,7 +17,7 @@ namespace MyPokemonRankingApi.Services
             _httpClient = httpClient;
         }
 
-        public async Task<IEnumerable<Pokemon>> GetRankingAsync(string userId,int? generation = null, string? type = null)
+        public async Task<IEnumerable<PokemonDto>> GetRankingAsync(string userId,int? generation = null, string? type = null)
         {
             var userRanking = await _repository.GetByUserIdAsync(userId);
 
@@ -36,10 +36,10 @@ namespace MyPokemonRankingApi.Services
                 );
             }
 
-            return userRanking.OrderBy(p => p.Position).ToList();
+            return userRanking.OrderBy(p => p.Position).Select(MapToDto);
         }
 
-        public async Task<Pokemon> AddToRankingAsync(string userId, CreatePokemonDto createDto)
+        public async Task<PokemonDto> AddToRankingAsync(string userId, CreatePokemonDto createDto)
         {
 
             if (createDto.Position < 1)
@@ -104,7 +104,7 @@ namespace MyPokemonRankingApi.Services
             await _repository.AddAsync(newPokemon);
             await _repository.SaveChangesAsync();
 
-            return newPokemon;
+            return MapToDto(newPokemon);
         }
 
         public async Task DeleteFromRankingAsync(string userId, int id)
@@ -126,7 +126,7 @@ namespace MyPokemonRankingApi.Services
         }
 
 
-        public async Task<Pokemon> UpdatePositionAsync(string userId, int id, int newPosition)
+        public async Task<PokemonDto> UpdatePositionAsync(string userId, int id, int newPosition)
         {
             if (newPosition < 1)
             {
@@ -150,7 +150,7 @@ namespace MyPokemonRankingApi.Services
 
             // Si la posición es la misma retornamos
             int oldPosition = pokemonToMove.Position;
-            if (oldPosition == newPosition) return pokemonToMove;
+            if (oldPosition == newPosition) return MapToDto(pokemonToMove);
 
             if (newPosition < oldPosition)
             {
@@ -177,7 +177,21 @@ namespace MyPokemonRankingApi.Services
             
             await _repository.SaveChangesAsync();
 
-            return pokemonToMove;
+            return MapToDto(pokemonToMove);
+        }
+
+
+        public async Task<IEnumerable<PokemonDto>> GetPublicRankingAsync(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("Username cannot be empty.");
+
+            var pokemons = await _repository.GetByUsernameAsync(username);
+
+            if (!pokemons.Any())
+                throw new KeyNotFoundException($"No ranking found for user '{username}'.");
+
+            return pokemons.OrderBy(p => p.Position).Select(MapToDto);
         }
 
 
@@ -226,7 +240,19 @@ namespace MyPokemonRankingApi.Services
             return 9;
         }
 
-
+        private static PokemonDto MapToDto(Pokemon pokemon)
+        {
+            return new PokemonDto
+            {
+                Id = pokemon.Id,
+                PokemonApiId = pokemon.PokemonApiId,
+                Name = pokemon.Name,
+                PrimaryType = pokemon.PrimaryType,
+                SecondaryType = pokemon.SecondaryType,
+                Position = pokemon.Position,
+                Generation = pokemon.Generation
+            };
+        }
 
 
     }

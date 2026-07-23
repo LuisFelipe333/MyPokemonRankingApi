@@ -14,6 +14,7 @@ namespace MyPokemonRankingApi.Interfaces
         Task<IEnumerable<Pokemon>> GetByUserIdAsync(string userId); // Obtiene todos los Pokémon de un usuario específico
 
         Task<Pokemon?> GetByIdAndUserIdAsync(int id, string userId); // Obtiene un Pokémon específico por su ID y el ID del usuario
+        Task<IEnumerable<Pokemon>> GetByUsernameAsync(string username); //Metodo para buscar pokemones por nombre de usuario, para la version publica
 
     }
 }
